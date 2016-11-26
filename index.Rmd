@@ -9,11 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+#Introduction
 
 The goal in this project is to use the data collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants that were asked to perform barball lifts correctly and incorrectly in 5 different ways to build a model able to predict the type, correctly or incorrectly,  of the performed activity.
 More information about the experiment and the data used for this project are from the website http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset and the published paper by Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ’13). Stuttgart, Germany: ACM SIGCHI, 2013.).
 
+
+#Data loading and preparation
 The first step of the analysis is to read the data from the two supplied csv files.
 
 ```{r cars}
@@ -46,7 +48,9 @@ dim(traindatameas)
 
 We now have 52 variables (53 - the "classe") for 19622 samples.
 
-We are now removing highly correlated variables to improve the stability of the model
+#Model Building
+
+First we will remove highly correlated variables to improve the stability of the model
 ```{r, message=FALSE, warning=FALSE}
 library(caret)
 
@@ -54,7 +58,7 @@ highCor <- findCorrelation(cor(traindatameas[,-53]), cutoff = 0.9, verbose = TRU
 traindatameas <- traindatameas[,-highCor]
 ```
 
-We can now train our model but we will keep some data to validate our model and use cross validation during the training.
+We can now train our model but we will keep some data to validate our model.
 ```{r}
 set.seed(1234)
 part <- createDataPartition(y = traindatameas$classe, p = 0.7, list = FALSE)
@@ -63,7 +67,8 @@ trainmeas <- traindatameas[part,]
 validmeas <- traindatameas[-part,]
 ```
 
-We start by using Classification and regression trees using the rpart method:
+## Classification and Regression Trees Model
+We start by using Classification and regression trees using the rpart method. We will use cross validation during the training:
 ```{r}
 library(rpart)
 
@@ -72,11 +77,17 @@ mod <- train(classe ~ .,
              method = "rpart" ,
              trControl = trainControl(method = "cv", number = 4)
              )
+mod
+mod$finalModel
 pred <- predict(mod, trainmeas)
 confusionMatrix(pred, trainmeas$classe)
 ```
 
-This model seriously lack accuracy even with the training data. We will try with a Random Forest method:
+This model seriously lack accuracy even with the training data.
+
+## Random Forest
+
+We try with a Random Forest method:
 ```{r, message=FALSE, warning=FALSE}
 library(e1071)
 library(ranger)
@@ -89,17 +100,16 @@ mod
 mod$finalModel
 ```
 
-There is no need to perform a cross validation on Random Forest. The validation set in not required either but we used it to assess the precision of our model. (http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr).
+There is no need to perform a cross validation on Random Forest. The validation set in not required either but we used it to assess the precision of our model (http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr).
 
 ```{r}
 pred <- predict(mod, validmeas)
 confusionMatrix(pred, validmeas$classe)
 ```
 
-The model is quite accurate with an accuracy of 99.5%. The out-of-bag (oob) error estimate is already computed during the model creation:
+The model is quite accurate with an accuracy of 99.5%. The out-of-bag (oob) error estimate is already computed during the model creation and with `r round(mod$finalModel$prediction.error * 100, 2)`% it is quite small. The Random Forest gives a good model that should be able to predict the classe of the activity with a good precision.
 
+#Predict classes on the test data
 ```{r}
-round(mod$finalModel$prediction.error * 100, 2)
+predict(mod, testdata)
 ```
-
-With 0.66% the error is quite small. The Random Forest gives a good model that should be able to predict the classe of the activity with a good precision.

@@ -124,9 +124,12 @@ $(document).ready(function () {
 </div>
 
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
 <p>The goal in this project is to use the data collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants that were asked to perform barball lifts correctly and incorrectly in 5 different ways to build a model able to predict the type, correctly or incorrectly, of the performed activity. More information about the experiment and the data used for this project are from the website <a href="http://groupware.les.inf.puc-rio.br/har" class="uri">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset and the published paper by Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ’13). Stuttgart, Germany: ACM SIGCHI, 2013.).</p>
+</div>
+<div id="data-loading-and-preparation" class="section level1">
+<h1>Data loading and preparation</h1>
 <p>The first step of the analysis is to read the data from the two supplied csv files.</p>
 <pre class="r"><code>traindata &lt;- read.csv(&quot;pml-training.csv&quot;, stringsAsFactors = FALSE )
 testdata &lt;- read.csv(&quot;pml-testing.csv&quot;, stringsAsFactors = FALSE)</code></pre>
@@ -150,7 +153,10 @@ traindatameas$classe &lt;- factor(traindatameas$classe)
 dim(traindatameas)</code></pre>
 <pre><code>## [1] 19622    53</code></pre>
 <p>We now have 52 variables (53 - the “classe”) for 19622 samples.</p>
-<p>We are now removing highly correlated variables to improve the stability of the model</p>
+</div>
+<div id="model-building" class="section level1">
+<h1>Model Building</h1>
+<p>First we will remove highly correlated variables to improve the stability of the model</p>
 <pre class="r"><code>library(caret)
 
 highCor &lt;- findCorrelation(cor(traindatameas[,-53]), cutoff = 0.9, verbose = TRUE)</code></pre>
@@ -170,13 +176,15 @@ highCor &lt;- findCorrelation(cor(traindatameas[,-53]), cutoff = 0.9, verbose = 
 ##   Means:  0.083 vs 0.164 so flagging column 33 
 ## All correlations &lt;= 0.9</code></pre>
 <pre class="r"><code>traindatameas &lt;- traindatameas[,-highCor]</code></pre>
-<p>We can now train our model but we will keep some data to validate our model and use cross validation during the training.</p>
+<p>We can now train our model but we will keep some data to validate our model.</p>
 <pre class="r"><code>set.seed(1234)
 part &lt;- createDataPartition(y = traindatameas$classe, p = 0.7, list = FALSE)
 
 trainmeas &lt;- traindatameas[part,]
 validmeas &lt;- traindatameas[-part,]</code></pre>
-<p>We start by using Classification and regression trees using the rpart method:</p>
+<div id="classification-and-regression-trees-model" class="section level2">
+<h2>Classification and Regression Trees Model</h2>
+<p>We start by using Classification and regression trees using the rpart method. We will use cross validation during the training:</p>
 <pre class="r"><code>library(rpart)
 
 mod &lt;- train(classe ~ .,
@@ -184,7 +192,47 @@ mod &lt;- train(classe ~ .,
              method = &quot;rpart&quot; ,
              trControl = trainControl(method = &quot;cv&quot;, number = 4)
              )
-pred &lt;- predict(mod, trainmeas)
+mod</code></pre>
+<pre><code>## CART 
+## 
+## 13737 samples
+##    45 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (4 fold) 
+## Summary of sample sizes: 10302, 10302, 10304, 10303 
+## Resampling results across tuning parameters:
+## 
+##   cp          Accuracy   Kappa    
+##   0.02197132  0.5293010  0.3919284
+##   0.03010884  0.5125572  0.3700225
+##   0.04343404  0.4263631  0.2342900
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was cp = 0.02197132.</code></pre>
+<pre class="r"><code>mod$finalModel</code></pre>
+<pre><code>## n= 13737 
+## 
+## node), split, n, loss, yval, (yprob)
+##       * denotes terminal node
+## 
+##   1) root 13737 9831 A (0.28 0.19 0.17 0.16 0.18)  
+##     2) pitch_forearm&lt; -26.65 1214   56 A (0.95 0.046 0 0 0) *
+##     3) pitch_forearm&gt;=-26.65 12523 9775 A (0.22 0.21 0.19 0.18 0.2)  
+##       6) magnet_belt_y&gt;=555.5 11466 8719 A (0.24 0.23 0.21 0.18 0.15)  
+##        12) yaw_belt&gt;=169.5 568   50 A (0.91 0.039 0 0.049 0) *
+##        13) yaw_belt&lt; 169.5 10898 8321 B (0.2 0.24 0.22 0.19 0.15)  
+##          26) magnet_dumbbell_z&lt; -93.5 1320  539 A (0.59 0.28 0.045 0.058 0.03) *
+##          27) magnet_dumbbell_z&gt;=-93.5 9578 7243 C (0.15 0.23 0.24 0.2 0.17)  
+##            54) magnet_dumbbell_y&lt; 288.5 4135 2467 C (0.19 0.15 0.4 0.13 0.13) *
+##            55) magnet_dumbbell_y&gt;=288.5 5443 3853 B (0.12 0.29 0.12 0.26 0.2)  
+##             110) total_accel_dumbbell&gt;=5.5 4037 2575 B (0.08 0.36 0.16 0.16 0.23)  
+##               220) pitch_dumbbell&gt;=-24.84179 1940  787 B (0.036 0.59 0.025 0.11 0.23) *
+##               221) pitch_dumbbell&lt; -24.84179 2097 1492 C (0.12 0.15 0.29 0.21 0.23) *
+##             111) total_accel_dumbbell&lt; 5.5 1406  650 D (0.24 0.091 0.0092 0.54 0.12) *
+##       7) magnet_belt_y&lt; 555.5 1057  202 E (0.00095 0.0028 0.0019 0.19 0.81) *</code></pre>
+<pre class="r"><code>pred &lt;- predict(mod, trainmeas)
 confusionMatrix(pred, trainmeas$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
@@ -217,7 +265,11 @@ confusionMatrix(pred, trainmeas$classe)</code></pre>
 ## Detection Rate         0.1789  0.08393   0.1655  0.05503  0.06224
 ## Detection Prevalence   0.2258  0.14122   0.4537  0.10235  0.07695
 ## Balanced Accuracy      0.7817  0.68137   0.7998  0.63955  0.66030</code></pre>
-<p>This model seriously lack accuracy even with the training data. We will try with a Random Forest method:</p>
+<p>This model seriously lack accuracy even with the training data.</p>
+</div>
+<div id="random-forest" class="section level2">
+<h2>Random Forest</h2>
+<p>We try with a Random Forest method:</p>
 <pre class="r"><code>library(e1071)
 library(ranger)
 mod &lt;- train(classe ~ .,
@@ -258,7 +310,7 @@ mod</code></pre>
 ## Target node size:                 1 
 ## Variable importance mode:         impurity 
 ## OOB prediction error:             0.61 %</code></pre>
-<p>There is no need to perform a cross validation on Random Forest. The validation set in not required either but we used it to assess the precision of our model. (<a href="http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr" class="uri">http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr</a>).</p>
+<p>There is no need to perform a cross validation on Random Forest. The validation set in not required either but we used it to assess the precision of our model (<a href="http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr" class="uri">http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm#ooberr</a>).</p>
 <pre class="r"><code>pred &lt;- predict(mod, validmeas)
 confusionMatrix(pred, validmeas$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
@@ -292,10 +344,14 @@ confusionMatrix(pred, validmeas$classe)</code></pre>
 ## Detection Rate         0.2843   0.1917   0.1730   0.1621   0.1833
 ## Detection Prevalence   0.2855   0.1927   0.1749   0.1628   0.1842
 ## Balanced Accuracy      0.9989   0.9945   0.9950   0.9944   0.9981</code></pre>
-<p>The model is quite accurate with an accuracy of 99.5%. The out-of-bag (oob) error estimate is already computed during the model creation:</p>
-<pre class="r"><code>round(mod$finalModel$prediction.error * 100, 2)</code></pre>
-<pre><code>## [1] 0.61</code></pre>
-<p>With 0.66% the error is quite small. The Random Forest gives a good model that should be able to predict the classe of the activity with a good precision.</p>
+<p>The model is quite accurate with an accuracy of 99.5%. The out-of-bag (oob) error estimate is already computed during the model creation and with 0.61% it is quite small. The Random Forest gives a good model that should be able to predict the classe of the activity with a good precision.</p>
+</div>
+</div>
+<div id="predict-classes-on-the-test-data" class="section level1">
+<h1>Predict classes on the test data</h1>
+<pre class="r"><code>predict(mod, testdata)</code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
 </div>
 
 
