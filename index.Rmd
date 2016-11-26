@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
-The goal in this project is to use the data collected from accelerometers on the belt, forearm, arm, and dumbell of 6 participants that were asked to perform barball lifts cottecly and incorrectly in 5 different ways to build a model able to predict the type, correctly or incorrectly,  of the performed activity.
+The goal in this project is to use the data collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants that were asked to perform barball lifts correctly and incorrectly in 5 different ways to build a model able to predict the type, correctly or incorrectly,  of the performed activity.
 More information about the experiment and the data used for this project are from the website http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset and the published paper by Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human ’13). Stuttgart, Germany: ACM SIGCHI, 2013.).
 
 The first step of the analysis is to read the data from the two supplied csv files.
@@ -23,7 +23,7 @@ testdata <- read.csv("pml-testing.csv", stringsAsFactors = FALSE)
 
 Some of the variables are measured values but some of them are calculated values after a elapsed time. The calculated values are only available at certain point in time and the line containing them can be identified by the variable "new_window". When this variable has a value of "yes" (all other case the value is "no") the calculated values are available.
 
-As the test dataset is based on measured value only, these calculated values are not usefull in our project (as no data are available for these in the test data). We will use the measuread values only for this analysis. We will also remove the variables for that are not measurements from the movements as the subject name and the timestamps.
+As the test dataset is based on measured value only, these calculated values are not useful in our project (as no data are available for these in the test data). We will use the measured values only for this analysis. We will also remove the variables for that are not measurements from the movements as the subject name and the timestamps.
 
 ```{r, message=FALSE, warning=FALSE}
 library(dplyr)
@@ -76,7 +76,7 @@ pred <- predict(mod, trainmeas)
 confusionMatrix(pred, trainmeas$classe)
 ```
 
-THis model seriously lack accuracy even with the training data. We will try with a Random Forest method:
+This model seriously lack accuracy even with the training data. We will try with a Random Forest method:
 ```{r, message=FALSE, warning=FALSE}
 library(e1071)
 library(ranger)
