@@ -1,5 +1,5 @@
 ---
-title: "Exercise Quality Prediction for Pratical Machine Learning Course"
+title: "Exercise Quality Prediction for Practical Machine Learning Course"
 author: "Patrick Cormeau"
 date: "November 17, 2016"
 output: html_document
